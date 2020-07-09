@@ -1,5 +1,5 @@
 <template>
-  <div class="entry">
+  <div v-if="entry.show" class="entry" :class="{ 'entry__selected': isSelected, 'entry__vanishing': isVanishing }" @click="setEntryAsSelected">
     <div class="entry__image-wrapper">
       <img class="entry__image" :src="entry | getThumbnailUrl" alt="">
     </div>
@@ -14,7 +14,7 @@
         Posted by {{ entry.data.author }} {{ entry.data.created_utc | dateInDeltaTime }}
       </small>
     </div>
-    <img src="../assets/close.svg" alt="" class="entry__close-icon">
+    <img src="../assets/close.svg" alt="" class="entry__close-icon" @click.stop="dismissEntry">
   </div>
 </template>
 
@@ -22,8 +22,29 @@
 export default {
   name: "RedditEntry",
   props: {
-    entry: Object
+    entry: Object,
+    isSelected: Boolean,
+    index: Number
   },
+  data() {
+    return {
+      isVanishing: false
+    }
+  },
+  methods: {
+    setEntryAsSelected() {
+      this.$emit('set-selected-entry', this.entry);
+    },
+    dismissEntry() {
+      this.isVanishing = true;
+      this.setTimeout(() => {
+        this.entry.show = false;
+      }, 600, this);
+    }
+  },
+  destroyed() {
+    this.isVanishing = false;
+  }
 };
 </script>
 
@@ -55,6 +76,36 @@ a {
     box-sizing: border-box;
     margin-right: 10px;
     position: relative;
+    cursor: pointer;
+    -webkit-transition: all .3s ease-in;
+    -moz-transition: all .3s ease-in;
+    -ms-transition: all .3s ease-in;
+    -o-transition: all .3s ease-in;
+    transition: all .3s ease-in;
+    opacity: 1;
+    -webkit-transform: translateX(0);
+    -moz-transform: translateX(0);
+    -ms-transform: translateX(0);
+    -o-transform: translateX(0);
+    transform: translateX(0);
+
+    &.entry__vanishing {
+      opacity: 0;
+      -webkit-transform: translateX(-1000px);
+      -moz-transform: translateX(-1000px);
+      -ms-transform: translateX(-1000px);
+      -o-transform: translateX(-1000px);
+      transform: translateX(-1000px);
+    }
+
+    &:hover,
+    &.entry__selected {
+      box-shadow: #c9c9c9 2px 2px 10px 5px;
+    }
+
+    &.entry__selected {
+      border: 1px solid #ccccfb;
+    }
 
     @media screen and (min-width: 650px) {
       margin-right: 20px;
@@ -101,10 +152,10 @@ a {
 
     &__close-icon {
       position: absolute;
-      width: 18px;
-      height: 18px;
-      top: 8px;
-      right: 8px;
+      width: 14px;
+      height: 14px;
+      top: 11px;
+      right: 11px;
     }
   }
 </style>
