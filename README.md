@@ -1,5 +1,7 @@
 # reddit-top-entries
 
+You can check the visual project progress inside the folder "project progress".
+
 ## Project setup
 ```
 npm install
