@@ -12,14 +12,14 @@
         <img src="../assets/sidebar.svg" class="entries__show-sidebar__icon" alt="">
       </div>
       <div class="entries__sidebar" :class="showSidebarClassObject" v-on:scroll="handleScroll">
-        <img src="../assets/scroll.svg" class="entries__sidebar__icon-scroll" :class="{ 'bounce-5': showBounce }" alt="" v-show="this.entries.length > 0">
+        <img src="../assets/scroll.svg" class="entries__sidebar__icon-scroll" :class="{ 'bounce-5': showBounce }" alt="" v-show="this.totalEntries.length > 0">
         <div class="entries__controls">
           <div class="entries__dismiss-all" @click="dismissAll()">
             <img src="../assets/layers.svg" alt="" class="entries__icon-layers">
             <img src="../assets/close.svg" alt="" class="entries__icon-close">
             Dismiss all
           </div>
-          <div class="entries__pagination" v-show="entries.length > 0">
+          <div class="entries__pagination" v-show="totalEntries.length > 0">
             {{ totalEntries.length }} results <br>
             <a :class="{ 'disabled': currentPage === 1}" @click="prevPage" class="entries__pagination__prev">
               &lt;
@@ -31,7 +31,7 @@
           </div>
         </div>
         <RedditEntry
-          v-for="(entry, index) in entries"
+          v-for="(entry, index) in currentPageEntries"
           :key="entry.id"
           :index="index"
           :entry="entry"
@@ -41,7 +41,7 @@
           @set-selected-entry="setSelectedEntry"
           @dismiss-entry="dismissEntry"
         />
-        <div v-if="entries.length === 0" class="entries__empty">
+        <div v-if="totalEntries.length === 0" class="entries__empty">
           All entries were dismissed
         </div>
       </div>
@@ -87,6 +87,11 @@
         return {
           show: (window.getComputedStyle(document.body, ':before').content === '"medium"' || (window.getComputedStyle(document.body, ':before').content === '"xsmall"' && this.showSidebar)),
         }
+      },
+      currentPageEntries: function () {
+        const startIndex = (this.currentPage * this.entriesPerPage) - this.entriesPerPage;
+        const endIndex = ((this.currentPage+1)*this.entriesPerPage) - this.entriesPerPage;
+        return this.totalEntries.slice(startIndex, endIndex)
       }
     },
     created() {
@@ -159,12 +164,10 @@
                   originalIndex: index + 1
                 };
                 this.totalEntries.push(newEntry);
-                if (index < this.entriesPerPage) {
-                  this.entries.push(newEntry);
-                }
+
               }
             });
-            this.selectedEntry = this.entries.length > 0 ? this.entries[0] : null;
+            this.selectedEntry = this.currentPageEntries.length > 0 ? this.currentPageEntries[0] : null;
             this.loading = false;
             this.loaded = true;
 
@@ -180,8 +183,6 @@
         entry.read = true;
         this.selectedEntry = entry;
 
-        this.$set(this.entries, data.index, entry);
-
         this.entriesRead.push(entry.id);
         localStorage.redditEntriesRead = JSON.stringify(this.entriesRead);
 
@@ -192,13 +193,14 @@
       },
       dismissEntry(data) {
         const dismissedIsSelected = this.selectedEntry && (this.selectedEntry.id === data.entry.id);
-        this.entries.splice(data.index, 1);
+        this.totalEntries.splice(this.totalEntries.indexOf(data.entry), 1);
         if (dismissedIsSelected) {
-          const entriesLenght = this.entries.length;
+          const entriesLenght = this.currentPageEntries.length;
           if (entriesLenght === 0) {
             this.selectedEntry = null;
           } else if (entriesLenght > 0) {
-            this.selectedEntry = this.entries[0];
+            this.selectedEntry = this.currentPageEntries[0];
+            this.selectedEntry.read = true;
           }
         }
 
@@ -210,10 +212,11 @@
       },
       dismissAll() {
         this.selectedEntry = null;
-        this.entries.forEach((el) => {
+        this.totalEntries.forEach((el) => {
           el.dismissed = true;
           this.entriesDismissed.push(el.id);
         });
+        this.totalEntries = [];
         localStorage.redditEntriesDismissed = JSON.stringify(this.entriesDismissed);
       },
       toggleSidebar() {
@@ -222,13 +225,11 @@
       prevPage() {
         if (this.currentPage > 1) {
           this.currentPage --;
-          this.entries = this.totalEntries.slice( ((this.currentPage - 1) * this.entriesPerPage) - (this.currentPage > 1 ? 1 : 0), (this.currentPage * this.entriesPerPage));
         }
       },
       nextPage() {
         if (this.currentPage < this.pages) {
           this.currentPage ++;
-          this.entries = this.totalEntries.slice( ((this.currentPage - 1) * this.entriesPerPage), (this.currentPage * this.entriesPerPage));
         }
       }
     }
