@@ -1,19 +1,19 @@
 <template>
   <div v-if="entry !== null" class="entry">
-    <h3 class="entry__title">{{ entry.data.title }}</h3>
-    <div class="entry__image-wrapper" v-if="entry.data.preview">
-      <a :href="entry | getFullSizeImagelUrl" target="_blank">
-        <img class="entry__image" :src="entry | getFullSizeImagelUrl" alt="">
+    <h3 class="entry__title">{{ entry.title }}</h3>
+    <div class="entry__image-wrapper" v-if="entry.image">
+      <a :href="entry.image" target="_blank">
+        <img class="entry__image" :src="entry.image" alt="">
       </a>
     </div>
-    <div v-if="entry.data.selftext"> {{ entry.data.selftext }} </div>
+    <div v-if="entry.text"> {{ entry.text }} </div>
     <div class="entry__text-wrapper">
       <div class="entry__comments">
         <img src="../assets/comment.svg" alt="" class="entry__comments__icon">
-        <span>{{ entry.data.num_comments }} comments</span>
+        <span>{{ entry.numComments }} comments</span>
       </div>
       <small class="entry__author_date">
-        Posted by {{ entry.data.author }} {{ entry.data.created_utc | dateInDeltaTime }}
+        Posted by {{ entry.author }} {{ entry.date | dateInDeltaTime }}
       </small>
     </div>
   </div>
@@ -31,27 +31,11 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
-
-
-
   .entry {
     background-color: white;
     padding: 20px;
-
     overflow: auto;
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px;
-
+    box-shadow: $color-gray-box-shadow 0px 0px 10px;
     margin-right: 20px;
     position: relative;
     box-sizing: border-box;
@@ -60,6 +44,12 @@ a {
     margin-top: 20px;
     margin-bottom: 20px;
     flex: 1;
+
+    margin-left: 20px;
+
+    @include media-breakpoint-up(md) {
+      margin-left: 0;
+    }
 
     &__title {
       font-size: 18px;

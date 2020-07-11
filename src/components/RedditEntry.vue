@@ -1,18 +1,18 @@
 <template>
   <div class="entry" :class="{ 'entry__selected': isSelected, 'entry__vanishing': isVanishing }">
     <div class="entry__content-wrapper" :class="{ 'unread': !read }" @click="setEntryAsSelected">
-      <div class="entry__image-wrapper" v-if="entry.data.preview">
-        <img class="entry__image" :src="entry | getThumbnailUrl" alt="">
+      <div class="entry__image-wrapper" v-if="entry.thumbnailImage">
+        <img class="entry__image" :src="entry.thumbnailImage" alt="">
       </div>
       <div class="entry__text-wrapper">
-        <h3 class="entry__title">{{ entry.data.title }}</h3>
+        <h3 class="entry__title"> {{ entry.originalIndex }} {{ entry.title }}</h3>
 
         <div class="entry__comments">
           <img src="../assets/comment.svg" alt="" class="entry__comments__icon">
-          <span>{{ entry.data.num_comments }} comments</span>
+          <span>{{ entry.numComments }} comments</span>
         </div>
         <small class="entry__author_date">
-          Posted by {{ entry.data.author }} {{ entry.data.created_utc | dateInDeltaTime }}
+          Posted by {{ entry.author }} {{ entry.date | dateInDeltaTime }}
         </small>
       </div>
     </div>
@@ -61,27 +61,13 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
-
-
-
   .entry {
     background-color: white;
     border-radius: 5px;
 
     margin-bottom: 20px;
     overflow: auto;
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px;
+    box-shadow: $color-gray-box-shadow 0px 0px 10px;
     width: 100%;
     box-sizing: border-box;
     margin-right: 10px;
@@ -113,16 +99,16 @@ a {
     }
 
     &:hover {
-      box-shadow: rgba(0, 0, 0, 0.3) 0px 0px 10px;
+      box-shadow: $color-gray-box-shadow-darker 0px 0px 10px;
     }
 
     &.entry__selected {
-      box-shadow: rgba(51, 39, 137, 0.7) 0px 0px 10px;
+      box-shadow: $color-gray-box-shadow-purple 0px 0px 10px;
 
       .entry__content-wrapper {
-        border-left-color: rgba(22, 13, 92, .5);
-        border-top-color: rgba(22, 13, 92, .5);
-        border-right-color: rgba(22, 13, 92, .5);
+        border-left-color: $color-dark-purple-transparent;
+        border-top-color: $color-dark-purple-transparent;
+        border-right-color: $color-dark-purple-transparent;
         border-radius: 5px 5px 0 0;
       }
     }
@@ -139,7 +125,7 @@ a {
         transition: all .2s ease-in;
         transform: rotate(-45deg) translate(70px, -9px);
         content: 'New';
-        background-color: deeppink;
+        background-color: $color-pink;
         color: white;
         position: absolute;
         text-transform: uppercase;
@@ -208,9 +194,9 @@ a {
     }
 
     &__dismiss {
-      background-color: #160D5C;
+      background-color: $color-dark-purple;
       width: 100%;
-      color: #FFF;
+      color: $color-light-gray;
       font-size: 12px;
       padding: 5px 0;
       font-weight: 500;

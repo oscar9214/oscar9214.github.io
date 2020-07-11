@@ -35,19 +35,29 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #3E3E89;
+  color: $color-dark-purple-gray;
 }
 
 body, h3 {
   margin: 0;
 }
 
+body:before {
+  content: "xsmall";
+  display: none;
+  visibility: hidden;
+
+  @include media-breakpoint-up(md) {
+    content: "medium";
+  }
+}
+
   .main{
     &__title {
-      background-color: #332789;
+      background-color: $color-middle-purple;
       margin: 0;
       padding: 22px 0;
-      color: #F0F0F0;
+      color: $color-light-gray;
     }
 
     &__authorize {

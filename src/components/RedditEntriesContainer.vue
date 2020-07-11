@@ -8,16 +8,31 @@
       </svg>
     </div>
     <div class="entries__container" v-show="loaded">
-      <div class="entries__sidebar" v-on:scroll="handleScroll">
+      <div class="entries__show-sidebar" @click="toggleSidebar">
+        <img src="../assets/sidebar.svg" class="entries__show-sidebar__icon" alt="">
+      </div>
+      <div class="entries__sidebar" :class="showSidebarClassObject" v-on:scroll="handleScroll">
         <img src="../assets/scroll.svg" class="entries__sidebar__icon-scroll" :class="{ 'bounce-5': showBounce }" alt="" v-show="this.entries.length > 0">
-        <div class="entries__dismiss-all" @click="dismissAll()">
-          <img src="../assets/layers.svg" alt="" class="entries__icon-layers">
-          <img src="../assets/close.svg" alt="" class="entries__icon-close">
-          Dismiss all
+        <div class="entries__controls">
+          <div class="entries__dismiss-all" @click="dismissAll()">
+            <img src="../assets/layers.svg" alt="" class="entries__icon-layers">
+            <img src="../assets/close.svg" alt="" class="entries__icon-close">
+            Dismiss all
+          </div>
+          <div class="entries__pagination" v-show="entries.length > 0">
+            {{ totalEntries.length }} results <br>
+            <a :class="{ 'disabled': currentPage === 1}" @click="prevPage" class="entries__pagination__prev">
+              &lt;
+            </a>
+            {{ currentPage }}
+            <a @click="nextPage" :class="{ 'disabled': currentPage === pages }" class="entries__pagination__next">
+            &gt;
+          </a>
+          </div>
         </div>
         <RedditEntry
           v-for="(entry, index) in entries"
-          :key="entry.data.id"
+          :key="entry.id"
           :index="index"
           :entry="entry"
           :isSelected="selectedEntry === entry"
@@ -53,16 +68,32 @@
     data() {
       return {
         entries: [],
+        totalEntries: [],
         token: null,
         selectedEntry: null,
         showBounce: true,
         loading: false,
-        loaded: false
+        loaded: false,
+        showSidebar: false,
+        entriesPerPage: 25,
+        currentPage: 1,
+        pages: 4,
+        entriesRead: [],
+        entriesDismissed: []
+      }
+    },
+    computed: {
+      showSidebarClassObject: function(){
+        return {
+          show: (window.getComputedStyle(document.body, ':before').content === '"medium"' || (window.getComputedStyle(document.body, ':before').content === '"xsmall"' && this.showSidebar)),
+        }
       }
     },
     created() {
       const code = window.location.href.indexOf('&code=') > -1 ? window.location.href.split('&code=')[1] : null;
       const token = localStorage.redditAppData ? JSON.parse(localStorage.redditAppData).token : null;
+      this.entriesRead = localStorage.redditEntriesRead ? JSON.parse(localStorage.redditEntriesRead) : [];
+      this.entriesDismissed = localStorage.redditEntriesDismissed ? JSON.parse(localStorage.redditEntriesDismissed) : [];
       if (code || token) {
         this.$emit('toggle-authorize', false);
 
@@ -104,7 +135,7 @@
       fetchTopEntries() {
         axios
           .get(
-            'https://oauth.reddit.com/top',
+            'https://oauth.reddit.com/top?limit=100',
             {
               headers: {
                 Authorization: "bearer " + this.token
@@ -112,12 +143,28 @@
             }
           )
           .then(response => {
-            this.entries = response.data.data.children;
-            this.entries.forEach((el, index) => {
-              el.dismissed = false;
-              el.read = index === 0;
+            response.data.data.children.forEach((entry, index) => {
+              if (this.entriesDismissed.indexOf(entry.data.id) === -1) {
+                const newEntry = {
+                  id: entry.data.id,
+                  title: entry.data.title,
+                  thumbnailImage: entry.data.preview ? entry.data.preview.images[0].resolutions[0].url.replace(/amp;/g, "") : null,
+                  image: entry.data.preview ? entry.data.preview.images[0].source.url.replace(/amp;/g, "") : null,
+                  text: entry.data.selftext,
+                  numComments: entry.data.num_comments,
+                  author: entry.data.author,
+                  date: entry.data.created_utc,
+                  dismissed: false,
+                  read: index === 0 || this.entriesRead.indexOf(entry.data.id) > -1,
+                  originalIndex: index + 1
+                };
+                this.totalEntries.push(newEntry);
+                if (index < this.entriesPerPage) {
+                  this.entries.push(newEntry);
+                }
+              }
             });
-            this.selectedEntry = this.entries[0];
+            this.selectedEntry = this.entries.length > 0 ? this.entries[0] : null;
             this.loading = false;
             this.loaded = true;
 
@@ -127,14 +174,24 @@
         })
       },
       setSelectedEntry(data) {
+        const needsTimeout = window.getComputedStyle(document.body, ':before').content === '"xsmall"';
+
         const entry = data.entry;
         entry.read = true;
         this.selectedEntry = entry;
 
         this.$set(this.entries, data.index, entry);
+
+        this.entriesRead.push(entry.id);
+        localStorage.redditEntriesRead = JSON.stringify(this.entriesRead);
+
+        setTimeout(() => {
+          this.toggleSidebar();
+        }, (needsTimeout ? 500 : 0));
+
       },
       dismissEntry(data) {
-        const dismissedIsSelected = this.selectedEntry && (this.selectedEntry.data.id === data.entry.data.id);
+        const dismissedIsSelected = this.selectedEntry && (this.selectedEntry.id === data.entry.id);
         this.entries.splice(data.index, 1);
         if (dismissedIsSelected) {
           const entriesLenght = this.entries.length;
@@ -144,6 +201,9 @@
             this.selectedEntry = this.entries[0];
           }
         }
+
+        this.entriesDismissed.push(data.entry.id);
+        localStorage.redditEntriesDismissed = JSON.stringify(this.entriesDismissed);
       },
       handleScroll(event) {
         this.showBounce = event.target.scrollTop === 0;
@@ -152,7 +212,24 @@
         this.selectedEntry = null;
         this.entries.forEach((el) => {
           el.dismissed = true;
+          this.entriesDismissed.push(el.id);
         });
+        localStorage.redditEntriesDismissed = JSON.stringify(this.entriesDismissed);
+      },
+      toggleSidebar() {
+        this.showSidebar = !this.showSidebar;
+      },
+      prevPage() {
+        if (this.currentPage > 1) {
+          this.currentPage --;
+          this.entries = this.totalEntries.slice( ((this.currentPage - 1) * this.entriesPerPage) - (this.currentPage > 1 ? 1 : 0), (this.currentPage * this.entriesPerPage));
+        }
+      },
+      nextPage() {
+        if (this.currentPage < this.pages) {
+          this.currentPage ++;
+          this.entries = this.totalEntries.slice( ((this.currentPage - 1) * this.entriesPerPage), (this.currentPage * this.entriesPerPage));
+        }
       }
     }
   };
@@ -171,6 +248,12 @@
       overflow: auto;
       -ms-overflow-style: none;
       scrollbar-width: none;
+      position: relative;
+
+      @include media-breakpoint-up(md) {
+        max-width: 1440px;
+        margin: 0 auto;
+      }
 
       &::-webkit-scrollbar {
         width: 0px;  /* Remove scrollbar space */
@@ -178,17 +261,85 @@
       }
     }
 
+    &__show-sidebar {
+      position: absolute;
+      background-color: $color-middle-purple;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      box-shadow: rgba(0, 0, 0, 0.6) 2px 2px 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      top: 10px;
+      right: 10px;
+      -webkit-transition: all .3s;
+      -moz-transition: all .3s;
+      -ms-transition: all .3s;
+      -o-transition: all .3s;
+      transition: all .3s;
+      z-index: 1;
+
+      &:hover {
+        transform: scale(1.2);
+      }
+
+      &__icon {
+        height: 22px;
+        width: 22px;
+      }
+
+      @include media-breakpoint-up(md) {
+        display: none;
+      }
+    }
+
     &__sidebar {
-      width: 400px;
+
       height: 100%;
       padding-left: 20px;
       padding-right: 20px;
       padding-top: 20px;
       box-sizing: border-box;
-      position: relative;
+      //position: relative;
       overflow: auto;
       -ms-overflow-style: none;
       scrollbar-width: none;
+      -webkit-transform: translateX(-100%);
+      -moz-transform: translateX(-100%);
+      -ms-transform: translateX(-100%);
+      -o-transform: translateX(-100%);
+      transform: translateX(-100%);
+      -webkit-transition: transform .3s ease-in;
+      -moz-transition: transform .3s ease-in;
+      -ms-transition: transform .3s ease-in;
+      -o-transition: transform .3s ease-in;
+      transition: transform .3s ease-in;
+      position: absolute;
+      background-color: white;
+      z-index: 1;
+      box-shadow: $color-gray-box-shadow-darker 0px 0px 10px;
+      width: 85%;
+      
+      @include media-breakpoint-down(md) {
+        &.show {
+          -webkit-transform: translateX(0);
+          -moz-transform: translateX(0);
+          -ms-transform: translateX(0);
+          -o-transform: translateX(0);
+          transform: translateX(0);
+        }
+      }
+
+      @include media-breakpoint-up(md) {
+        position: relative;
+        transform: none;
+        width: 400px;
+        margin-right: 20px;
+        box-shadow: $color-gray-box-shadow 0px 0px 10px;
+      }
+
 
       &::-webkit-scrollbar {
         width: 0px;  /* Remove scrollbar space */
@@ -197,7 +348,7 @@
       
       &__icon-scroll {
         position: fixed;
-        background-color: deeppink;
+        background-color: $color-pink;
         border-radius: 10px;
         bottom: 60px;
         left: 180px;
@@ -205,7 +356,7 @@
         z-index: 1;
         animation-duration: 2s;
         animation-iteration-count: 5;
-        opacity: .2;
+        opacity: .1;
         -webkit-transition: opacity .3s ease-in;
         -moz-transition: opacity .3s ease-in;
         -ms-transition: opacity .3s ease-in;
@@ -226,12 +377,50 @@
       align-items: center;
     }
 
+    &__controls {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+
     &__dismiss-all {
       display: flex;
       justify-content: center;
       align-items: center;
-      margin-bottom: 20px;
       cursor: pointer;
+    }
+
+    &__pagination {
+
+      &__next,
+      &__prev {
+        font-weight: 900;
+        letter-spacing: -2px;
+        cursor: pointer;
+        font-size: 20px;
+        -webkit-transition: all .3s;
+        -moz-transition: all .3s;
+        -ms-transition: all .3s;
+        -o-transition: all .3s;
+        transition: all .3s;
+
+        &:hover {
+          color: $color-pink;
+        }
+
+        &.disabled {
+          color: $color-gray;
+          pointer-events: none;
+        }
+      }
+
+      &__prev {
+        margin-right: 10px;
+      }
+
+      &__next {
+        margin-left: 10px;
+      }
     }
 
     &__icon-layers {
