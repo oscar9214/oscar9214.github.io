@@ -3,7 +3,7 @@
     <h3 class="entry__title">{{ entry.title }}</h3>
     <div class="entry__image-wrapper" v-if="entry.image">
       <a :href="entry.image" target="_blank">
-        <img class="entry__image" :src="entry.image" alt="">
+        <img class="entry__image" :src="image" alt="">
       </a>
     </div>
     <div class="entry__text" v-if="entry.text"> {{ text }} <a class="entry__text__show-more" @click="showFullText" v-if="text.length < entry.textLong.length && !showLongText">... show more</a></div>
@@ -29,7 +29,9 @@ export default {
   },
   data() {
     return {
-      showLongText: false
+      showLongText: false,
+      loadingImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBzdHlsZT0ibWFyZ2luOmF1dG87YmFja2dyb3VuZDojZmZmO2Rpc3BsYXk6YmxvY2s7IiB3aWR0aD0iMjAwcHgiIGhlaWdodD0iMjAwcHgiIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCI+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMzIiIHN0cm9rZS13aWR0aD0iOCIgc3Ryb2tlPSIjM0UzRTg5IiBzdHJva2UtZGFzaGFycmF5PSI1MC4yNjU0ODI0NTc0MzY2OSA1MC4yNjU0ODI0NTc0MzY2OSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiB0cmFuc2Zvcm09InJvdGF0ZSgyOTkuMjM4IDUwIDUwKSI+CiAgICA8YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIGR1cj0iMS42MzkzNDQyNjIyOTUwODE4cyIga2V5VGltZXM9IjA7MSIgdmFsdWVzPSIwIDUwIDUwOzM2MCA1MCA1MCI+PC9hbmltYXRlVHJhbnNmb3JtPgogIDwvY2lyY2xlPgo8L3N2Zz4=',
+      image: this.loadingImage
     }
   },
   computed: {
@@ -43,11 +45,20 @@ export default {
     },
     saveEntry() {
       this.$emit('save-entry', this.entry);
+    },
+    loadImage() {
+      let highResImage = new Image();
+      highResImage.onload = function(){
+        this.image = this.entry.image; // setting the attribute to image
+      }.bind(this);
+      highResImage.src = this.entry.image; // loading the image
     }
   },
   watch: {
     entry() {
       this.showLongText = false;
+      this.image = this.loadingImage;
+      this.loadImage();
     }
   }
 };
