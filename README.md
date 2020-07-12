@@ -7,6 +7,7 @@ You can check the visual project progress on images from day 1 to day 5 inside t
 The app has a sidebar in which you can navigate the top entries and select one to have more detail about the entry on the right side.
 
 #### Check the app working right here: https://oscar9214.github.io/reddit-top-entries/
+If you want to clear the app state just clear the localstorage data of this page and the app will reset to the initial state.
 
 ## Project setup
 ```
