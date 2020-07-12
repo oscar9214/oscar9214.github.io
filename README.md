@@ -1,26 +1,30 @@
 # reddit-top-entries
 
-You can check the visual project progress inside the folder "project progress".
+This is a Vue.js app that connects to the reddit REST API to retrieve the top entries on reddit.
+
+You can check the visual project progress on images from day 1 to day 5 inside the folder [project progress](https://github.com/oscar9214/reddit-top-entries/tree/master/project%20progress).
+
+The app has a sidebar in which you can navigate the top entries and select one to have more detail about the entry on the right side.
 
 ## Project setup
 ```
 npm install
-```
-
-### Compiles and hot-reloads for development
-```
 npm run serve
 ```
 
-### Compiles and minifies for production
-```
-npm run build
-```
+## Testing
+There are some test cases done with **cypress** located inside the ./cypress folder
 
-### Lints and fixes files
-```
-npm run lint
-```
+## App features
+The app has the following features:
+- Connection with reddit web services
+- Pagination support
+- Saving entries
+- App state-preservation/restoration
+- Indicator of unread/read post (updated status, after post it’s selected)
+- Dismiss Post Button (remove the cell from list. Animations required)
+- Dismiss All Button (remove all posts. Animations required)
+- Support split layout (left side: all posts / right side: detail post)
+- Responsive design
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+All the documentation used for this app was taken from: http://www.reddit.com/dev/api and https://github.com/reddit-archive/reddit/wiki/OAuth2
