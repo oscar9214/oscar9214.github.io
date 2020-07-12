@@ -129,7 +129,7 @@
             qs.stringify({
               grant_type: "authorization_code",
               code: code,
-              redirect_uri: "http://localhost:8080"
+              redirect_uri: "https://oscar9214.github.io/reddit-top-entries/"
             }),
             {
               headers: {
