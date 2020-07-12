@@ -29,5 +29,6 @@ The app has the following features:
 - Dismiss All Button (remove all posts. Animations required)
 - Support split layout (left side: all posts / right side: detail post)
 - Responsive design
+- To go to the full sized picture once you selected the entry just click on the image
 
 All the documentation used for this app was taken from: http://www.reddit.com/dev/api and https://github.com/reddit-archive/reddit/wiki/OAuth2
