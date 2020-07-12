@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <h1 class="main__title">A client for reddit</h1>
-    <a class="main__authorize" v-if="showAuthorize" href="https://www.reddit.com/api/v1/authorize?client_id=RNgt-PKuPjQ0GA&response_type=code&state=random&redirect_uri=http://localhost:8080&duration=temporary&scope=read">Please authenticate with reddit</a>
+    <a class="main__authorize" v-if="showAuthorize" href="https://www.reddit.com/api/v1/authorize?client_id=RNgt-PKuPjQ0GA&response_type=code&state=random&redirect_uri=http://localhost:8080&duration=temporary&scope=read,save">Please authenticate with reddit</a>
     <RedditEntriesContainer v-show="!showAuthorize"
       @toggle-authorize="toggleAuthorize"
     />

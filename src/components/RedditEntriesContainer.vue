@@ -41,12 +41,22 @@
           @set-selected-entry="setSelectedEntry"
           @dismiss-entry="dismissEntry"
         />
+        <div class="entries__pagination" v-show="totalEntries.length > 0">
+          {{ totalEntries.length }} results <br>
+          <a :class="{ 'disabled': currentPage === 1}" @click="prevPage" class="entries__pagination__prev">
+            &lt;
+          </a>
+          {{ currentPage }}
+          <a @click="nextPage" :class="{ 'disabled': currentPage === pages }" class="entries__pagination__next">
+            &gt;
+          </a>
+        </div>
         <div v-if="totalEntries.length === 0" class="entries__empty">
           All entries were dismissed
         </div>
       </div>
       <div class="entries__selected-entry">
-        <SelectedRedditEntry :entry="selectedEntry" />
+        <SelectedRedditEntry :entry="selectedEntry" @save-entry="saveEntry" />
       </div>
     </div>
   </div>
@@ -77,7 +87,6 @@
         showSidebar: false,
         entriesPerPage: 25,
         currentPage: 1,
-        pages: 4,
         entriesRead: [],
         entriesDismissed: []
       }
@@ -92,6 +101,9 @@
         const startIndex = (this.currentPage * this.entriesPerPage) - this.entriesPerPage;
         const endIndex = ((this.currentPage+1)*this.entriesPerPage) - this.entriesPerPage;
         return this.totalEntries.slice(startIndex, endIndex)
+      },
+      pages: function () {
+        return Math.ceil(this.totalEntries.length / this.entriesPerPage);
       }
     },
     created() {
@@ -148,33 +160,38 @@
             }
           )
           .then(response => {
-            response.data.data.children.forEach((entry, index) => {
-              if (this.entriesDismissed.indexOf(entry.data.id) === -1) {
-                const newEntry = {
-                  id: entry.data.id,
-                  title: entry.data.title,
-                  thumbnailImage: entry.data.preview ? entry.data.preview.images[0].resolutions[0].url.replace(/amp;/g, "") : null,
-                  image: entry.data.preview ? entry.data.preview.images[0].source.url.replace(/amp;/g, "") : null,
-                  text: entry.data.selftext,
-                  numComments: entry.data.num_comments,
-                  author: entry.data.author,
-                  date: entry.data.created_utc,
-                  dismissed: false,
-                  read: index === 0 || this.entriesRead.indexOf(entry.data.id) > -1,
-                  originalIndex: index + 1
-                };
-                this.totalEntries.push(newEntry);
+            if (response.status === 200) {
+              response.data.data.children.forEach((entry, index) => {
+                if (this.entriesDismissed.indexOf(entry.data.id) === -1) {
+                  const newEntry = {
+                    id: entry.data.id,
+                    title: entry.data.title,
+                    thumbnailImage: entry.data.preview ? entry.data.preview.images[0].resolutions[0].url.replace(/amp;/g, "") : null,
+                    image: entry.data.preview ? entry.data.preview.images[0].source.url.replace(/amp;/g, "") : null,
+                    text: entry.data.selftext && entry.data.selftext.length < 2000 ? entry.data.selftext : entry.data.selftext.slice(0, 2000),
+                    textLong: entry.data.selftext,
+                    numComments: entry.data.num_comments,
+                    author: entry.data.author,
+                    date: entry.data.created_utc,
+                    dismissed: false,
+                    read: this.totalEntries.length === 0 || this.entriesRead.indexOf(entry.data.id) > -1,
+                    originalIndex: index + 1,
+                    name: entry.data.name,
+                    saved: entry.data.saved
+                  };
+                  this.totalEntries.push(newEntry);
+                }
+              });
+              this.selectedEntry = this.currentPageEntries.length > 0 ? this.currentPageEntries[0] : null;
+              this.loading = false;
+              this.loaded = true;
+            } else {
+              this.$emit('toggle-authorize', true);
+              localStorage.redditAppData = JSON.stringify({"token": null });
+            }
 
-              }
-            });
-            this.selectedEntry = this.currentPageEntries.length > 0 ? this.currentPageEntries[0] : null;
-            this.loading = false;
-            this.loaded = true;
 
-          }).catch(() => {
-          this.$emit('toggle-authorize', true);
-          localStorage.redditAppData = JSON.stringify({"token": null });
-        })
+          })
       },
       setSelectedEntry(data) {
         const needsTimeout = window.getComputedStyle(document.body, ':before').content === '"xsmall"';
@@ -231,6 +248,23 @@
         if (this.currentPage < this.pages) {
           this.currentPage ++;
         }
+      },
+      saveEntry(entry) {
+        axios
+          .post(
+            'https://oauth.reddit.com/api/save?id=' + entry.name,
+            null,
+            {
+              headers: {
+                Authorization: "bearer " + this.token
+              }
+            }
+          )
+          .then(response => {
+            if (response.status === 200) {
+              entry.saved = true;
+            }
+          })
       }
     }
   };
@@ -348,7 +382,7 @@
       }
       
       &__icon-scroll {
-        position: fixed;
+        position: absolute;
         background-color: $color-pink;
         border-radius: 10px;
         bottom: 60px;
@@ -357,7 +391,7 @@
         z-index: 1;
         animation-duration: 2s;
         animation-iteration-count: 5;
-        opacity: .1;
+        opacity: 0;
         -webkit-transition: opacity .3s ease-in;
         -moz-transition: opacity .3s ease-in;
         -ms-transition: opacity .3s ease-in;
@@ -376,6 +410,7 @@
       flex: 1;
       display: flex;
       align-items: center;
+      max-width: 100%;
     }
 
     &__controls {

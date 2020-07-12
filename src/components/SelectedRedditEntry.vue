@@ -6,12 +6,14 @@
         <img class="entry__image" :src="entry.image" alt="">
       </a>
     </div>
-    <div v-if="entry.text"> {{ entry.text }} </div>
+    <div class="entry__text" v-if="entry.text"> {{ text }} <a class="entry__text__show-more" @click="showFullText" v-if="text.length < entry.textLong.length && !showLongText">... show more</a></div>
     <div class="entry__text-wrapper">
       <div class="entry__comments">
         <img src="../assets/comment.svg" alt="" class="entry__comments__icon">
         <span>{{ entry.numComments }} comments</span>
       </div>
+      <a @click="saveEntry" class="entry__save" v-show="!entry.saved">+ Save</a>
+      <small v-show="entry.saved">&check; Saved</small>
       <small class="entry__author_date">
         Posted by {{ entry.author }} {{ entry.date | dateInDeltaTime }}
       </small>
@@ -25,11 +27,45 @@ export default {
   props: {
     entry: Object
   },
+  data() {
+    return {
+      showLongText: false
+    }
+  },
+  computed: {
+    text: function () {
+      return this.showLongText ? this.entry.textLong : this.entry.text;
+    }
+  },
+  methods: {
+    showFullText() {
+      this.showLongText = true;
+    },
+    saveEntry() {
+      this.$emit('save-entry', this.entry);
+    }
+  },
+  watch: {
+    entry() {
+      this.showLongText = false;
+    }
+  }
 };
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+
+  a {
+    color: $color-pink;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+      text-underline: deeppink;
+    }
+  }
 
   .entry {
     background-color: white;
@@ -67,14 +103,13 @@ export default {
     }
 
     &__text-wrapper {
-      margin-top: auto;
       display: flex;
       margin-top: 20px;
+      justify-content: space-between;
     }
 
     &__author_date {
       font-size: 14px;
-      margin-left: auto;
     }
 
     &__comments {
@@ -88,6 +123,10 @@ export default {
         height: 18px;
         margin-right: 5px;
       }
+    }
+
+    &__text{
+      word-break: break-word;
     }
   }
 </style>
