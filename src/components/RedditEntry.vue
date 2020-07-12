@@ -5,7 +5,7 @@
         <img class="entry__image" :src="entry.thumbnailImage" alt="">
       </div>
       <div class="entry__text-wrapper">
-        <h3 class="entry__title"> {{ entry.originalIndex }} {{ entry.title }}</h3>
+        <h3 class="entry__title"> {{ entry.title }}</h3>
 
         <div class="entry__comments">
           <img src="../assets/comment.svg" alt="" class="entry__comments__icon">
