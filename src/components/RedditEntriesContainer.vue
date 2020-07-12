@@ -191,7 +191,10 @@
             }
 
 
-          })
+          }).catch(() => {
+          this.$emit('toggle-authorize', true);
+          localStorage.redditAppData = JSON.stringify({"token": null });
+        })
       },
       setSelectedEntry(data) {
         const needsTimeout = window.getComputedStyle(document.body, ':before').content === '"xsmall"';
